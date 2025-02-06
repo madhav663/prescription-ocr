@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"prescription-ocr/internal/api/handlers"
-	"prescription-ocr/internal/models"
+	"github.com/madhav663/prescription-ocr/internal/api/handlers"
+	"github.com/madhav663/prescription-ocr/internal/models"
 )
 
 func TestCreateMedication(t *testing.T) {

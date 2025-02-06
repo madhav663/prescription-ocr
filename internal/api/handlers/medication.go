@@ -5,19 +5,16 @@ import (
 	"net/http"
 	"strconv"
 
-	"prescription-ocr/internal/models"
+	"github.com/madhav663/prescription-ocr/internal/models"
 )
-
 
 type MedicationHandler struct {
 	Model *models.MedicationModel
 }
 
-
 func NewMedicationHandler(model *models.MedicationModel) *MedicationHandler {
 	return &MedicationHandler{Model: model}
 }
-
 
 func (h *MedicationHandler) CreateMedication(w http.ResponseWriter, r *http.Request) {
 	var medication models.Medication
@@ -34,7 +31,6 @@ func (h *MedicationHandler) CreateMedication(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(medication)
 }
-
 
 func (h *MedicationHandler) GetMedication(w http.ResponseWriter, r *http.Request) {
 	idStr := r.URL.Query().Get("id")
@@ -53,7 +49,6 @@ func (h *MedicationHandler) GetMedication(w http.ResponseWriter, r *http.Request
 	json.NewEncoder(w).Encode(medication)
 }
 
-
 func (h *MedicationHandler) UpdateMedication(w http.ResponseWriter, r *http.Request) {
 	var medication models.Medication
 	if err := json.NewDecoder(r.Body).Decode(&medication); err != nil {
@@ -69,7 +64,6 @@ func (h *MedicationHandler) UpdateMedication(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(medication)
 }
-
 
 func (h *MedicationHandler) DeleteMedication(w http.ResponseWriter, r *http.Request) {
 	idStr := r.URL.Query().Get("id")
