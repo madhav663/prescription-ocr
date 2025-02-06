@@ -1,4 +1,4 @@
-module github.com/Madhav663/prescription-ocr
+module github.com/madhav663/prescription-ocr
 
 go 1.23.5
 

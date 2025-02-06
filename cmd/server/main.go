@@ -7,13 +7,13 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/Madhav663/prescription-ocr/internal/api/handlers"
-	"github.com/Madhav663/prescription-ocr/internal/api/middleware"
-	"github.com/Madhav663/prescription-ocr/internal/api/routes"
-	"github.com/Madhav663/prescription-ocr/internal/database/schema"
-	"github.com/Madhav663/prescription-ocr/internal/models"
-	"github.com/Madhav663/prescription-ocr/internal/services/llama"
-	"github.com/Madhav663/prescription-ocr/internal/services/ocr"
+	"github.com/madhav663/prescription-ocr/internal/api/handlers"
+	"github.com/madhav663/prescription-ocr/internal/api/middleware"
+	"github.com/madhav663/prescription-ocr/internal/api/routes"
+	"github.com/madhav663/prescription-ocr/internal/database/schema"
+	"github.com/madhav663/prescription-ocr/internal/models"
+	"github.com/madhav663/prescription-ocr/internal/services/llama"
+	"github.com/madhav663/prescription-ocr/internal/services/ocr"
 
 	"github.com/joho/godotenv"
 )
