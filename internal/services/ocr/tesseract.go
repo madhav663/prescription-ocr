@@ -3,26 +3,21 @@ package ocr
 import (
 	"fmt"
 	"log"
-	"os"
 	"os/exec"
 )
 
-
+// ProcessImage extracts text using OCR
 func ProcessImage(imagePath string) (string, error) {
-	
-	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
-		return "", fmt.Errorf("file not found: %s", imagePath)
-	}
+	log.Println("🛠️ Running Tesseract on:", imagePath)
 
-	log.Printf("Processing image with Tesseract: %s", imagePath)
+	cmd := exec.Command("tesseract", imagePath, "stdout", "--psm", "6", "--oem", "3")
+	output, err := cmd.CombinedOutput()
 
-	cmd := exec.Command("tesseract", imagePath, "stdout")
-	output, err := cmd.Output()
 	if err != nil {
-		log.Printf("Failed to process image: %s, Error: %v", imagePath, err)
-		return "", fmt.Errorf("failed to process image: %w", err)
+		log.Printf(" Tesseract Error: %s\n", string(output))
+		return "", fmt.Errorf("failed to process image: %s", string(output))
 	}
 
-	log.Printf("Tesseract processing complete for: %s", imagePath)
+	log.Println("✅ Extracted Text:", string(output))
 	return string(output), nil
 }

@@ -4,33 +4,15 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 
 	"github.com/madhav663/prescription-ocr/internal/api"
 	"github.com/madhav663/prescription-ocr/internal/database/schema"
 	"github.com/madhav663/prescription-ocr/internal/models"
 	"github.com/madhav663/prescription-ocr/internal/services/llama"
 	_ "github.com/lib/pq"
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using system environment variables")
-	}
-
-	 
-	requiredEnvs := []string{"DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD", "DB_NAME", "DB_SSLMODE", "LLAMA_API_URL"}
-	for _, env := range requiredEnvs {
-		if os.Getenv(env) == "" {
-			log.Fatalf("Missing required environment variable: %s", env)
-		}
-	}
-
-	
-	llamaClient := llama.NewClient(os.Getenv("LLAMA_API_URL"))
-
 	
 	dbConfig := schema.DBConfig{
 		Host:     os.Getenv("DB_HOST"),
@@ -44,13 +26,20 @@ func main() {
 	
 	db, err := schema.NewDatabase(dbConfig)
 	if err != nil {
-		log.Fatalf("Failed to connect to the database: %v", err)
+		log.Fatalf(" Failed to connect to the database: %v", err)
 	}
 	defer db.Close()
-	log.Println("Successfully connected to the database.")
+
+	
+	models.DB = db 
 
 	
 	medicationModel := &models.MedicationModel{DB: db}
+
+	
+	llamaClient := llama.NewClient(os.Getenv("LLAMA_API_URL"))
+
+	
 	router := api.SetupRouter(medicationModel, llamaClient)
 
 	
@@ -61,15 +50,15 @@ func main() {
 	}
 }
 
+
 func getDBPort() int {
-	dbPortStr := os.Getenv("DB_PORT")
-	dbPort, err := strconv.Atoi(dbPortStr)
-	if err != nil {
-		log.Printf("Invalid DB_PORT: %s, defaulting to 5432", dbPortStr)
-		return 5432
+	port := os.Getenv("DB_PORT")
+	if port == "" {
+		return 5432 // Default PostgreSQL port
 	}
-	return dbPort
+	return 5432
 }
+
 
 func getServerPort() string {
 	port := os.Getenv("SERVER_PORT")
