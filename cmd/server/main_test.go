@@ -1,101 +1,56 @@
 package main
 
 import (
-    "database/sql"
-    "fmt"
-    "io"
-    "log"
-    "net/http"
-    "net/http/httptest"
-    "os"
-    "testing"
-    "time"
+	"bytes"
+	"fmt"
+	"mime/multipart"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"testing"
 
-    _ "github.com/lib/pq"
-    "github.com/madhav663/prescription-ocr/internal/api"
-    "github.com/madhav663/prescription-ocr/internal/models"
-    "github.com/madhav663/prescription-ocr/internal/services/llama"
+	"github.com/madhav663/prescription-ocr/internal/api/handlers"
 )
 
-func TestMainFunctionality(t *testing.T) {
-    os.Setenv("DB_HOST", "127.0.0.1")
-    os.Setenv("DB_PORT", "5432")
-    os.Setenv("DB_USER", "testuser")       
-    os.Setenv("DB_PASSWORD", "testpassword") 
-    os.Setenv("DB_NAME", "testdb")       
-    os.Setenv("DB_SSLMODE", "disable")
+func TestUploadImageHandler(t *testing.T) {
+	dir, _ := os.Getwd()
+	imagePath := filepath.Join(dir, "..", "..", "uploads", "sample_text.png")
 
-    dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-        os.Getenv("DB_HOST"),
-        os.Getenv("DB_PORT"),
-        os.Getenv("DB_USER"),
-        os.Getenv("DB_PASSWORD"),
-        os.Getenv("DB_NAME"),
-        os.Getenv("DB_SSLMODE"),
-    )
+	fmt.Println(" Checking test image path:", imagePath)
 
-    testDB, err := sql.Open("postgres", dsn)
-    if err != nil {
-        t.Fatalf("Failed to connect to test database: %v", err)
-    }
-    defer testDB.Close()
+	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
+		t.Fatalf(" Test image not found: %s. Please add a test image in the 'uploads/' directory.", imagePath)
+	}
 
-    if err := testDB.Ping(); err != nil {
-        t.Fatalf("Database connection failed: %v", err)
-    }
-    log.Println("Connected to test database.")
+	file, err := os.Open(imagePath)
+	if err != nil {
+		t.Fatalf(" Failed to open test image: %v", err)
+	}
+	defer file.Close()
 
-    _, err = testDB.Exec(`
-        CREATE TABLE IF NOT EXISTS medications (
-            id SERIAL PRIMARY KEY,
-            name TEXT NOT NULL
-        )
-    `)
-    if err != nil {
-        t.Fatalf("Failed to create test table: %v", err)
-    }
+	
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, err := writer.CreateFormFile("image", filepath.Base(imagePath))
+	if err != nil {
+		t.Fatalf(" Failed to create form file: %v", err)
+	}
 
-    var insertedID int
-    tx, err := testDB.Begin()
-    if err != nil {
-        t.Fatalf("Failed to start transaction: %v", err)
-    }
+	
+	imageData, _ := os.ReadFile(imagePath)
+	part.Write(imageData)
+	writer.Close()
 
-    err = tx.QueryRow("INSERT INTO medications (name) VALUES ('TestMedication') RETURNING id").Scan(&insertedID)
-    if err != nil {
-        tx.Rollback()
-        t.Fatalf("Failed to insert test data: %v", err)
-    }
+	req := httptest.NewRequest("POST", "/upload", body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	rec := httptest.NewRecorder()
 
-    if err := tx.Commit(); err != nil {
-        t.Fatalf("Failed to commit transaction: %v", err)
-    }
-    log.Printf("Inserted test medication with ID: %d", insertedID)
+	handlers.UploadImageHandler(rec, req)
 
-    medicationModel := &models.MedicationModel{DB: testDB}
-    llamaClient := llama.NewClient(os.Getenv("LLAMA_API_URL"))
-    router := api.SetupRouter(medicationModel, llamaClient)
-
-    server := httptest.NewServer(router)
-    defer server.Close()
-
-    log.Printf("Waiting for database commit...")
-    time.Sleep(2 * time.Second)
-
-    requestURL := fmt.Sprintf("%s/medications?id=%d", server.URL, insertedID)
-    log.Printf("Sending request to: %s", requestURL)
-
-    resp, err := http.Get(requestURL)
-    if err != nil {
-        t.Fatalf("Failed to make request: %v", err)
-    }
-    defer resp.Body.Close()
-
-    body, _ := io.ReadAll(resp.Body)
-    log.Printf("Response body: %s", body)
-
-    if resp.StatusCode != http.StatusOK {
-        t.Errorf("Expected status OK, got %v", resp.StatusCode)
-    }
+	if rec.Code != http.StatusOK {
+		t.Errorf(" Expected status OK, got %d", rec.Code)
+	} else {
+		fmt.Println(" Test Passed: Image uploaded successfully!")
+	}
 }
-
