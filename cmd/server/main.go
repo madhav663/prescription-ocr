@@ -9,13 +9,12 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 	"github.com/madhav663/prescription-ocr/internal/api"
 	"github.com/madhav663/prescription-ocr/internal/database/schema"
 	"github.com/madhav663/prescription-ocr/internal/models"
 	"github.com/madhav663/prescription-ocr/internal/services/llama"
-	_ "github.com/lib/pq"
 )
-
 
 func connectWithRetry(dbConfig schema.DBConfig, retries int) (*sql.DB, error) {
 	var db *sql.DB
@@ -41,7 +40,6 @@ func main() {
 		log.Println("⚠️ No .env file found, using system environment variables")
 	}
 
-	
 	requiredEnvs := []string{"DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD", "DB_NAME", "DB_SSLMODE", "LLAMA_API_URL"}
 	for _, env := range requiredEnvs {
 		if os.Getenv(env) == "" {
@@ -49,7 +47,6 @@ func main() {
 		}
 	}
 
-	
 	dbConfig := schema.DBConfig{
 		Host:     os.Getenv("DB_HOST"),
 		Port:     5432,
@@ -59,24 +56,19 @@ func main() {
 		SSLMode:  os.Getenv("DB_SSLMODE"),
 	}
 
-
 	db, err := connectWithRetry(dbConfig, 5)
 	if err != nil {
 		log.Fatalf(" Failed to connect to the database: %v", err)
 	}
 	defer db.Close()
 
-	
 	models.DB = db
 
-	
 	llamaClient := llama.NewClient(os.Getenv("LLAMA_API_URL"))
 	medicationModel := &models.MedicationModel{DB: db}
 
-	
 	router := api.SetupRouter(medicationModel, llamaClient)
 
-	
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {
 		port = "8080"
